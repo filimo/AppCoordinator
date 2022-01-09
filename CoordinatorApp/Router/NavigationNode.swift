@@ -6,30 +6,37 @@
 //
 
 import SwiftUI
+import SwiftUILogger
 
 indirect enum NavigationNode<Screen, ScreenView: View>: View {
     case view(ScreenView, pushing: NavigationNode<Screen, ScreenView>, stack: Binding<[Screen]>, index: Int)
     case end
-    
+
     var body: some View {
         if case .view(let view, let pushedNode, let stack, let index) = self {
-            view.background(
-                NavigationLink(
-                    destination: pushedNode,
-                    isActive: Binding(
-                        get: {
-                            if case .end = pushedNode {
-                                return false
+            view
+                .background(
+                    NavigationLink(
+                        destination: pushedNode,
+                        isActive: Binding(
+                            get: {
+                                if case .end = pushedNode {
+                                    return false
+                                }
+
+                                return stack.wrappedValue.count > index + 1
+                            },
+                            set: { isPushed in
+                                guard !isPushed else { return }
+
+                                stack.wrappedValue = Array(stack.wrappedValue.prefix(index + 1))
                             }
-                            return stack.wrappedValue.count > index + 1
-                        },
-                        set: { isPushed in
-                            guard !isPushed else { return }
-                            stack.wrappedValue = Array(stack.wrappedValue.prefix(index + 1))
-                        }),
-                    label: EmptyView.init
-                ).hidden()
-            )
+                        ),
+                        label: EmptyView.init
+                    )
+                    .hidden()
+                    .debugPrint("view:", type(of: view.self), "link:", type(of: pushedNode.self))
+                )
         } else {
             EmptyView()
         }
